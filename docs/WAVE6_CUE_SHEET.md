@@ -8,7 +8,7 @@
 - Optional green route executed with `success`, showing the Google Calendar FreeBusy result.
 - Optional green route executed with `HOLD`, showing the truthful credential/setup reason when tenant or session prerequisites are missing.
 - Optional yellow route executed as a two-step supervised proof: request approval first, then approved execute. If execute returns `HOLD`, narrate the blocker instead of claiming success.
-- Do not plan a blue execution screenshot. The current build has no blue server artifact to capture.
+- Optional blue route executed, with the blue lane selected, the decision trace showing `fga_checked`, and the enforcement feed showing the real OpenFGA-backed result.
 
 ## Feature Map
 
@@ -29,7 +29,7 @@
 - Green is a real Token Vault path, but it may truthfully return `HOLD` when the session lacks a refresh token, the federated connection token-exchange grant is missing, or the connection setup is incomplete.
 - Yellow is a live supervised proof. It requests approval first, then approved execute attempts GitHub issue creation and returns `success` or a truthful `HOLD`.
 - Red is real proof that governance can block the action before provider consultation.
-- Blue is shell-only in this build. Do not claim OpenFGA is live.
+- Blue is a thin live OpenFGA proof in this build. Keep the claim narrow: one Audit Feed export gate, not a broad authorization platform.
 
 ## Safe Talk Track
 
@@ -40,7 +40,7 @@
 
 ## Do Not Say
 
-- "OpenFGA is shipped."
+- "OpenFGA is fully shipped across the product."
 - "Yellow is fully implemented."
 - "Green always succeeds."
 

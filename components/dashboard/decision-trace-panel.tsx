@@ -16,6 +16,9 @@ type ReplayStep = {
   detail: string;
 };
 
+const BLUE_ACTION_ID = "dashboard_access_decision";
+const BLUE_DOMAIN = "auth_security_surfaces";
+
 function statusTone(status: ReplayStatus) {
   if (status === "complete") {
     return {
@@ -64,6 +67,13 @@ function resolveEntryGovernance(entry: ReceiptLedgerEntry) {
     };
   }
 
+  if (entry.expectedAction === BLUE_ACTION_ID) {
+    return {
+      domain: BLUE_DOMAIN,
+      requiresFGA: true
+    };
+  }
+
   if (isDemoActionId(entry.expectedAction)) {
     const resolution = resolveGovernanceAction(entry.expectedAction, ACTIVE_PROFILE);
 
@@ -86,7 +96,7 @@ function buildReplay(entry: ReceiptLedgerEntry): ReplayStep[] {
   if (!event) {
     const pendingDetail =
       entry.lane === "blue"
-        ? "No blue access-decision artifact is emitted yet in this build."
+        ? "No blue access-decision artifact is captured yet. Run /api/actions/blue to execute the live OpenFGA check."
         : "No lane execution captured yet. Run the lane route to capture evidence.";
     const fgaDetail = governance.domain
       ? `not_required for ${governance.domain}`
@@ -98,7 +108,9 @@ function buildReplay(entry: ReceiptLedgerEntry): ReplayStep[] {
       {
         label: "fga checked",
         status: governance.requiresFGA ? "pending" : "not_required",
-        detail: governance.requiresFGA ? "OpenFGA remains unwired in this wave." : fgaDetail
+        detail: governance.requiresFGA
+          ? "OpenFGA is wired for the blue route and will run when the route is executed."
+          : fgaDetail
       },
       { label: "approval requested", status: "pending", detail: pendingDetail },
       {

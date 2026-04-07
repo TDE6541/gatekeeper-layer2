@@ -42,8 +42,12 @@ function statusTone(captured: boolean) {
 }
 
 function emptyReceiptMessage(lane: LedgerLane) {
-  if (lane === "yellow" || lane === "blue") {
+  if (lane === "yellow") {
     return "Awaiting execution — governance pre-check passed";
+  }
+
+  if (lane === "blue") {
+    return "Awaiting live OpenFGA check — no Audit Feed export decision captured yet.";
   }
 
   return "No receipt artifact emitted yet.";
@@ -124,6 +128,9 @@ export function ReceiptLedger({
                   <p>outcome {getGovernanceOutcomeLabel(entry.event)}</p>
                   <p>approval_requested {String(entry.event.approval_requested)}</p>
                   <p>credential_requested {String(entry.event.credential_requested)}</p>
+                  {entry.lane === "blue" ? (
+                    <p>fga_checked {String(entry.event.fga_checked)}</p>
+                  ) : null}
                 </div>
               ) : (
                 <div className="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-500">

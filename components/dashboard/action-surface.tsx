@@ -30,6 +30,8 @@ type ActionRouteBody = {
 };
 
 const YELLOW_ACTION_ID = "github_issue_create";
+const BLUE_ACTION_ID = "dashboard_access_decision";
+const BLUE_ROUTE = "/api/actions/blue";
 
 function tierButtonClass(tier: DemoActionCard["tier"]) {
   if (tier === "FULL_AUTO") {
@@ -43,6 +45,10 @@ function tierButtonClass(tier: DemoActionCard["tier"]) {
   return "border-rose-400/30 bg-rose-500/10 text-rose-200 hover:border-rose-300/60 hover:bg-rose-500/20";
 }
 
+function blueButtonClass() {
+  return "border-blue-400/30 bg-blue-500/10 text-blue-200 hover:border-blue-300/60 hover:bg-blue-500/20";
+}
+
 function laneFromAction(actionId: string): LedgerLane | null {
   if (actionId === "google_calendar_read") {
     return "green";
@@ -54,6 +60,10 @@ function laneFromAction(actionId: string): LedgerLane | null {
 
   if (actionId === "pricing_rule_change") {
     return "red";
+  }
+
+  if (actionId === BLUE_ACTION_ID) {
+    return "blue";
   }
 
   return null;
@@ -112,10 +122,10 @@ function createInitialLedger(actions: DemoActionCard[]): Record<LedgerLane, Rece
     blue: {
       lane: "blue",
       title: "Blue Access Decision",
-      subtitle: "Session and access decision shell",
-      expectedAction: "dashboard_access_decision",
-      route: "pending artifact",
-      provider: "auth session",
+      subtitle: "Audit Feed export gate",
+      expectedAction: BLUE_ACTION_ID,
+      route: BLUE_ROUTE,
+      provider: "openfga",
       event: null,
       trace: null,
       receipt: null
@@ -155,13 +165,16 @@ export function ActionSurface({ actions }: ActionSurfaceProps) {
   const [yellowApprovalReady, setYellowApprovalReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function runAction(action: DemoActionCard, body: ActionRouteBody = {}) {
-    const actionKey = pendingKey(action.id, body.phase);
+  async function runAction(
+    routeOrAction: DemoActionCard | { id: string; route: string },
+    body: ActionRouteBody = {}
+  ) {
+    const actionKey = pendingKey(routeOrAction.id, body.phase);
     setPendingAction(actionKey);
     setError(null);
 
     try {
-      const response = await fetch(action.route, {
+      const response = await fetch(routeOrAction.route, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -314,6 +327,37 @@ export function ActionSurface({ actions }: ActionSurfaceProps) {
                 </article>
               );
             })}
+
+            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-slate-500">
+                    BLUE
+                  </p>
+                  <p className="mt-2 text-sm text-slate-100">{BLUE_ACTION_ID}</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    provider openfga / domain auth_security_surfaces
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">
+                    Blue lane. Audit Feed export stays behind a live server-side OpenFGA check for user:tim viewer doc:dashboard.
+                  </p>
+                </div>
+
+                <div className="flex min-w-[13rem] flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void runAction({ id: BLUE_ACTION_ID, route: BLUE_ROUTE })}
+                    disabled={pendingAction !== null}
+                    className={`rounded-lg border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${blueButtonClass()}`}
+                  >
+                    {pendingAction === BLUE_ACTION_ID ? "Running..." : "Run route"}
+                  </button>
+                  <p className="text-xs text-slate-400">
+                    Server returns the Audit Feed export only if the OpenFGA viewer check allows it.
+                  </p>
+                </div>
+              </div>
+            </article>
           </div>
 
           {error ? (

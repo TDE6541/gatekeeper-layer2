@@ -44,6 +44,7 @@ function laneLabel(action: string) {
   if (action === "google_calendar_read") return "green";
   if (action === "github_issue_create") return "yellow";
   if (action === "pricing_rule_change") return "red";
+  if (action === "dashboard_access_decision") return "blue";
   return "unknown";
 }
 

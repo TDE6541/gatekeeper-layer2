@@ -14,7 +14,9 @@ Use this file when you need the fastest truthful map of the local Layer 2 repo.
 | `app/api/actions/full-auto/route.ts` | Green lane server route. Real Token Vault path for Google Calendar FreeBusy. |
 | `app/api/actions/supervised/route.ts` | Yellow lane server route. Approval-first supervised flow that can create a GitHub issue or return a truthful HOLD. |
 | `app/api/actions/hard-stop/route.ts` | Red lane server route. Real hard-stop proof and receipt emission. |
+| `app/api/actions/blue/route.ts` | Blue lane server route. Real OpenFGA-backed Audit Feed export gate. |
 | `lib/token-vault.ts` | Google connection name and Calendar FreeBusy provider call. |
+| `lib/openfga-blue.ts` | Thin hosted OpenFGA client helper for the blue lane proof. |
 
 ## Major Surfaces
 
@@ -36,6 +38,7 @@ Use this file when you need the fastest truthful map of the local Layer 2 repo.
 | `POST /api/actions/full-auto` | Green lane route. Real provider-token path that can return `success` or a governed `HOLD`. |
 | `POST /api/actions/supervised` | Yellow lane route. Requests approval first, then approved execute attempts GitHub issue creation and returns success or HOLD. |
 | `POST /api/actions/hard-stop` | Red lane route. Emits blocked evidence and a hard-stop receipt. |
+| `POST /api/actions/blue` | Blue lane route. Performs a real OpenFGA check before returning the Audit Feed export proof. |
 
 ## Key UI Panels
 
@@ -50,7 +53,7 @@ Use this file when you need the fastest truthful map of the local Layer 2 repo.
 
 ## Notes
 
-- The blue lane is currently a UI shell only. There is no blue server route or emitted blue artifact in the local repo state.
+- The blue lane is a thin live proof. `POST /api/actions/blue` performs a real OpenFGA check and emits a blue event/trace artifact with `fga_checked: true`.
 - `components/dashboard/red-lane-receipt.tsx` exists, but it is not wired into `app/dashboard/page.tsx`. The unified ledger panels are the current canonical dashboard surfaces.
 - For claim boundaries, use [docs/FEATURE_STATE.md](docs/FEATURE_STATE.md). For maintenance handoffs, use [docs/WHERE_TO_CHANGE_X.md](docs/WHERE_TO_CHANGE_X.md).
 

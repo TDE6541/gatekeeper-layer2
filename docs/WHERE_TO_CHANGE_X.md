@@ -14,6 +14,7 @@ Use this as the fast maintenance map for the current Layer 2 repo.
 | Google provider call details | `lib/token-vault.ts` | Connection name and Calendar FreeBusy API call live here. |
 | Yellow lane behavior | `app/api/actions/supervised/route.ts` | Approval-first supervised route logic lives here. |
 | Red lane behavior | `app/api/actions/hard-stop/route.ts` | Protected hard-stop route and receipt emission live here. |
+| Blue lane behavior | `app/api/actions/blue/route.ts`, `lib/openfga-blue.ts` | Thin live OpenFGA check and Audit Feed export gate live here. |
 | Action cards and lane summaries | `lib/governance.ts` | `ACTION_CATALOG` drives titles, providers, routes, and lane summaries. |
 | Run buttons and lane-to-ledger wiring | `components/dashboard/action-surface.tsx` | Client-side route execution and ledger/feed updates live here. |
 | Unified receipt ledger | `components/dashboard/receipt-ledger.tsx` | Red/green/yellow/blue evidence shells and empty-state wording live here. |
@@ -27,6 +28,6 @@ Use this as the fast maintenance map for the current Layer 2 repo.
 
 ## Blue Lane Note
 
-- The current blue lane is a UI shell, not a server route.
-- If a real blue artifact is added later, update `lib/governance.ts`, `components/dashboard/action-surface.tsx`, `components/dashboard/receipt-ledger.tsx`, `components/dashboard/decision-trace-panel.tsx`, `docs/FEATURE_STATE.md`, and `docs/WAVE6_CUE_SHEET.md` together.
+- The blue lane is now a thin live server route backed by `app/api/actions/blue/route.ts`.
+- If blue scope grows beyond this one proof, update `lib/openfga-blue.ts`, `components/dashboard/action-surface.tsx`, `components/dashboard/receipt-ledger.tsx`, `components/dashboard/decision-trace-panel.tsx`, `docs/FEATURE_STATE.md`, and `docs/WAVE6_CUE_SHEET.md` together.
 
