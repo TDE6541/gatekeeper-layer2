@@ -69,7 +69,7 @@ export type DemoActionId =
   | "pricing_rule_change";
 
 export type GovernanceDecisionTrace = {
-  actionId: DemoActionId;
+  actionId: string;
   provider: ProviderId;
   domain: GovernanceDomain;
   tier: GovernanceTier;
@@ -500,4 +500,5 @@ export function buildGovernanceActionResult(
     trace
   };
 }
+
 

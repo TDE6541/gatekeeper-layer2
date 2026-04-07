@@ -32,23 +32,23 @@ This file is the claim boundary for the current local repo state. If public/demo
 
 ## Blue Lane / OpenFGA
 
-- Real: The UI has a blue access-decision shell in the ledger and decision trace, and `lib/governance.ts` models which domains will require FGA later.
-- Partial: There is no blue route, no blue server artifact, and current route outputs keep `fga_checked: false`.
-- HOLD: OpenFGA is not wired as a live protected server-side surface in the current local repo.
-- Do not claim: blue is shipped, OpenFGA is enforcing access decisions, or FGA-backed authorization is demo-ready.
+- Real: `POST /api/actions/blue` is a live server route. It performs a real OpenFGA `check` for `user:tim` viewer on `doc:dashboard` and only returns the Audit Feed export when the check allows access.
+- Partial: This is one thin demo proof, not a broad authorization platform. The blue route uses a fixed demo subject/object pair and depends on live OpenFGA store/model/credential configuration.
+- HOLD: If the OpenFGA store, model, tuple, or hosted credentials drift, the route can truthfully return `blocked` or `HOLD` instead of success.
+- Do not claim: blue is a broad RBAC/ABAC system, blue resolves caller identity from the Auth0 session, or the repo ships multi-resource OpenFGA enforcement.
 
 ## Safe Public Posture
 
 - GateKeeper Layer 2 is a governance-first hackathon build with live Auth0 Universal Login, a protected dashboard, a real green Token Vault path, and a real red hard-stop proof.
 - Green may truthfully resolve as `HOLD` when tenant/session credential prerequisites are missing.
-- Yellow is a live supervised proof lane that may truthfully return `success` or `HOLD`; blue remains staged.
+- Yellow is a live supervised proof lane that may truthfully return `success` or `HOLD`; blue is now a thin live OpenFGA proof lane.
 - Safe public line: `30+ operator-facing governance surfaces`.
 
 ## Do Not Claim
 
-- OpenFGA is shipped.
+- OpenFGA is broadly shipped across the product.
 - Yellow is fully implemented.
 - Green is guaranteed success in every tenant/session.
-- Blue has a real server artifact in this repo state.
+- Blue resolves live caller identity instead of the fixed demo tuple.
 - Exact plugin skill counts in public-facing copy.
 
