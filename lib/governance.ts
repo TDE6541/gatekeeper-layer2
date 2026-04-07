@@ -109,6 +109,28 @@ export type GovernanceActionResult = {
   receipt?: HardStopReceipt;
 };
 
+export type GovernanceOutcomeLabel = GovernanceFeedEvent["outcome"] | "HOLD";
+
+const GOVERNANCE_HOLD_PREFIX = "HOLD:";
+const GOVERNANCE_CREDENTIAL_GAP_PATTERN =
+  /refresh token|connection access token|connection token|missing credential|credential gap/i;
+
+export function isGovernanceHoldEvent(event: GovernanceFeedEvent): boolean {
+  const reason = event.reason.trimStart();
+
+  return (
+    reason.startsWith(GOVERNANCE_HOLD_PREFIX) ||
+    (event.outcome === "error" &&
+      GOVERNANCE_CREDENTIAL_GAP_PATTERN.test(reason))
+  );
+}
+
+export function getGovernanceOutcomeLabel(
+  event: GovernanceFeedEvent
+): GovernanceOutcomeLabel {
+  return isGovernanceHoldEvent(event) ? "HOLD" : event.outcome;
+}
+
 type DomainPolicy = {
   tiers: Record<GovernanceProfile, GovernanceTier>;
   requiresFGA: boolean;
@@ -234,7 +256,7 @@ export const ACTION_CATALOG: Record<DemoActionId, DemoActionCard> = {
     domain: "new_file_creation",
     route: "/api/actions/supervised",
     summary:
-      "Yellow lane stub. Governance requires approval before any future credential exchange."
+      "Yellow lane. Request approval first, then approved execute attempts a live GitHub issue create and returns success or HOLD."
   },
   pricing_rule_change: {
     id: "pricing_rule_change",
@@ -452,13 +474,13 @@ export function buildGovernanceActionResult(
       label: "approval_gate",
       status: "pending",
       detail:
-        "Supervisor approval is required for new_file_creation under the conservative profile."
+        "Supervisor approval is required for new_file_creation under the conservative profile before approved execute can continue."
     },
     {
       label: "credential_handoff",
       status: "pending",
       detail:
-        "Credential exchange is deferred until Wave 2 and must remain behind the approval gate."
+        "GitHub credential handoff stays behind the approval gate until approved execute starts the supervised pass."
     }
   );
 
@@ -473,8 +495,9 @@ export function buildGovernanceActionResult(
       approval_requested: false,
       fga_checked: false,
       reason:
-        "Governance marked the action as supervised. Wave 1 keeps approval and identity unwired on purpose."
+        "Governance marked the action as supervised. Approval must be requested before GitHub credential handoff can begin."
     },
     trace
   };
 }
+

@@ -1,14 +1,22 @@
-import type { GovernanceDecisionTraceStep } from "@/lib/governance";
+import {
+  ACTIVE_PROFILE,
+  getGovernanceOutcomeLabel,
+  resolveGovernanceAction,
+  type DemoActionId,
+  type GovernanceDecisionTraceStep
+} from "@/lib/governance";
 
 import type { ReceiptLedgerEntry } from "@/components/dashboard/receipt-ledger";
 
+type ReplayStatus = "complete" | "pending" | "blocked" | "not_required";
+
 type ReplayStep = {
   label: string;
-  status: "complete" | "pending" | "blocked";
+  status: ReplayStatus;
   detail: string;
 };
 
-function statusTone(status: ReplayStep["status"]) {
+function statusTone(status: ReplayStatus) {
   if (status === "complete") {
     return {
       dot: "bg-emerald-400",
@@ -25,6 +33,14 @@ function statusTone(status: ReplayStep["status"]) {
     };
   }
 
+  if (status === "not_required") {
+    return {
+      dot: "bg-slate-500",
+      text: "text-slate-300",
+      border: "border-slate-700"
+    };
+  }
+
   return {
     dot: "bg-amber-400",
     text: "text-amber-200",
@@ -32,19 +48,58 @@ function statusTone(status: ReplayStep["status"]) {
   };
 }
 
+function isDemoActionId(actionId: string): actionId is DemoActionId {
+  return (
+    actionId === "google_calendar_read" ||
+    actionId === "github_issue_create" ||
+    actionId === "pricing_rule_change"
+  );
+}
+
+function resolveEntryGovernance(entry: ReceiptLedgerEntry) {
+  if (entry.trace) {
+    return {
+      domain: entry.trace.domain,
+      requiresFGA: entry.trace.requiresFGA
+    };
+  }
+
+  if (isDemoActionId(entry.expectedAction)) {
+    const resolution = resolveGovernanceAction(entry.expectedAction, ACTIVE_PROFILE);
+
+    return {
+      domain: resolution.domain,
+      requiresFGA: resolution.requiresFGA
+    };
+  }
+
+  return {
+    domain: null,
+    requiresFGA: false
+  };
+}
+
 function buildReplay(entry: ReceiptLedgerEntry): ReplayStep[] {
   const event = entry.event;
+  const governance = resolveEntryGovernance(entry);
 
   if (!event) {
     const pendingDetail =
       entry.lane === "blue"
         ? "No blue access-decision artifact is emitted yet in this build."
         : "No lane execution captured yet. Run the lane route to capture evidence.";
+    const fgaDetail = governance.domain
+      ? `not_required for ${governance.domain}`
+      : "not_required for this lane";
 
     return [
       { label: "classify domain", status: "pending", detail: pendingDetail },
       { label: "resolve tier", status: "pending", detail: pendingDetail },
-      { label: "fga checked", status: "pending", detail: "OpenFGA remains unwired in this wave." },
+      {
+        label: "fga checked",
+        status: governance.requiresFGA ? "pending" : "not_required",
+        detail: governance.requiresFGA ? "OpenFGA remains unwired in this wave." : fgaDetail
+      },
       { label: "approval requested", status: "pending", detail: pendingDetail },
       {
         label: "credential requested or suppressed",
@@ -55,7 +110,13 @@ function buildReplay(entry: ReceiptLedgerEntry): ReplayStep[] {
     ];
   }
 
-  const blocked = event.outcome === "blocked";
+  const displayOutcome = getGovernanceOutcomeLabel(event);
+  const blocked = event.outcome === "blocked" || displayOutcome === "HOLD";
+  const approvalOnly =
+    entry.lane === "yellow" &&
+    event.approval_requested &&
+    !event.credential_requested &&
+    event.outcome === "allowed";
 
   return [
     {
@@ -70,25 +131,45 @@ function buildReplay(entry: ReceiptLedgerEntry): ReplayStep[] {
     },
     {
       label: "fga checked",
-      status: event.fga_checked ? "complete" : blocked ? "blocked" : "pending",
-      detail: event.fga_checked
-        ? "fga_checked true in route output"
-        : "fga_checked false in route output"
+      status: governance.requiresFGA
+        ? event.fga_checked
+          ? "complete"
+          : blocked
+            ? "blocked"
+            : "pending"
+        : "not_required",
+      detail: governance.requiresFGA
+        ? event.fga_checked
+          ? "fga_checked true in route output"
+          : "fga_checked false in route output"
+        : `not_required for ${event.domain}`
     },
     {
       label: "approval requested",
       status: event.approval_requested ? "complete" : blocked ? "blocked" : "complete",
-      detail: `approval_requested ${String(event.approval_requested)}`
+      detail: approvalOnly
+        ? "approval_requested true; approved execute is not captured yet"
+        : `approval_requested ${String(event.approval_requested)}`
     },
     {
       label: "credential requested or suppressed",
-      status: event.credential_requested ? "complete" : blocked ? "blocked" : "complete",
-      detail: `credential_requested ${String(event.credential_requested)}`
+      status: approvalOnly
+        ? "pending"
+        : event.credential_requested
+          ? "complete"
+          : blocked
+            ? "blocked"
+            : "complete",
+      detail: approvalOnly
+        ? "credential_requested false until approved execute starts the GitHub token handoff"
+        : `credential_requested ${String(event.credential_requested)}`
     },
     {
       label: "execute or block",
-      status: blocked ? "blocked" : "complete",
-      detail: `outcome ${event.outcome}`
+      status: approvalOnly ? "pending" : blocked ? "blocked" : "complete",
+      detail: approvalOnly
+        ? "Approval is captured. Run approved execute to continue the yellow lane."
+        : `outcome ${displayOutcome}`
     }
   ];
 }

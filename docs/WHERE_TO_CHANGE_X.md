@@ -12,7 +12,7 @@ Use this as the fast maintenance map for the current Layer 2 repo.
 | Protected dashboard shell | `app/dashboard/page.tsx` | Dashboard header, auth gate, and panel composition live here. |
 | Green lane behavior | `app/api/actions/full-auto/route.ts` | Real Token Vault route, green-lane success/HOLD behavior, and event/trace emission live here. |
 | Google provider call details | `lib/token-vault.ts` | Connection name and Calendar FreeBusy API call live here. |
-| Yellow lane behavior | `app/api/actions/supervised/route.ts` | Staged supervised route response lives here. |
+| Yellow lane behavior | `app/api/actions/supervised/route.ts` | Approval-first supervised route logic lives here. |
 | Red lane behavior | `app/api/actions/hard-stop/route.ts` | Protected hard-stop route and receipt emission live here. |
 | Action cards and lane summaries | `lib/governance.ts` | `ACTION_CATALOG` drives titles, providers, routes, and lane summaries. |
 | Run buttons and lane-to-ledger wiring | `components/dashboard/action-surface.tsx` | Client-side route execution and ledger/feed updates live here. |
@@ -29,3 +29,4 @@ Use this as the fast maintenance map for the current Layer 2 repo.
 
 - The current blue lane is a UI shell, not a server route.
 - If a real blue artifact is added later, update `lib/governance.ts`, `components/dashboard/action-surface.tsx`, `components/dashboard/receipt-ledger.tsx`, `components/dashboard/decision-trace-panel.tsx`, `docs/FEATURE_STATE.md`, and `docs/WAVE6_CUE_SHEET.md` together.
+

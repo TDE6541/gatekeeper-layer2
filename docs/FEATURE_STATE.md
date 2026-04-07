@@ -18,10 +18,10 @@ This file is the claim boundary for the current local repo state. If public/demo
 
 ## Yellow Lane
 
-- Real: `POST /api/actions/supervised` exists and returns the governed supervised lane shape for `github_issue_create`.
-- Partial: It is a staged lane. There is no live supervisor approval flow, no GitHub credential exchange, and no provider call in the current local repo.
-- HOLD: Approval and identity handoff are still unwired.
-- Do not claim: yellow is fully working, GitHub issue creation is live, or supervisor approval is already enforced end to end.
+- Real: `POST /api/actions/supervised` is a real supervised server route for `github_issue_create`. It requests approval first and only attempts GitHub execution after approved execute.
+- Partial: Approval is local to the Action Surface. Success still depends on Auth0 session refresh-token material, GitHub connection token exchange, and GitHub repo access.
+- HOLD: Missing refresh token, missing federated connection token-exchange grant, or insufficient GitHub repo access can stop the lane after approval and surface a precise HOLD.
+- Do not claim: external supervisor automation, Guardian/CIBA approval, or guaranteed GitHub issue creation in every tenant/session.
 
 ## Red Lane
 
@@ -41,7 +41,7 @@ This file is the claim boundary for the current local repo state. If public/demo
 
 - GateKeeper Layer 2 is a governance-first hackathon build with live Auth0 Universal Login, a protected dashboard, a real green Token Vault path, and a real red hard-stop proof.
 - Green may truthfully resolve as `HOLD` when tenant/session credential prerequisites are missing.
-- Yellow and blue are intentionally staged surfaces, not finished backend implementations.
+- Yellow is a live supervised proof lane that may truthfully return `success` or `HOLD`; blue remains staged.
 - Safe public line: `30+ operator-facing governance surfaces`.
 
 ## Do Not Claim
@@ -51,3 +51,4 @@ This file is the claim boundary for the current local repo state. If public/demo
 - Green is guaranteed success in every tenant/session.
 - Blue has a real server artifact in this repo state.
 - Exact plugin skill counts in public-facing copy.
+

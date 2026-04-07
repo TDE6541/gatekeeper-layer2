@@ -12,5 +12,6 @@ Read these files in this order when you need the repo truth quickly.
 
 - Local repo code wins over older notes or snapshots.
 - Green is a real route, but it may truthfully resolve as `HOLD`.
-- Yellow and blue remain staged surfaces.
+- Yellow is an approval-first supervised route. Blue remains a staged shell.
 - Do not claim OpenFGA is shipped from this repo state.
+

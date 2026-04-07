@@ -9,13 +9,13 @@ In this repo, Auth0 Universal Login establishes the application session and prot
 - Universal Login and session protection are real. `/auth/login`, `/auth/logout`, `proxy.ts`, `lib/auth0.ts`, and `app/dashboard/page.tsx` are wired to `@auth0/nextjs-auth0` v4.
 - The green lane is real. `POST /api/actions/full-auto` resolves governance, tries `auth0.getAccessTokenForConnection(...)`, and calls Google Calendar FreeBusy through `lib/token-vault.ts`.
 - The red lane is real. `POST /api/actions/hard-stop` returns a hard-stop receipt that shows governance blocked the action before any provider consultation.
-- The yellow lane is staged. `POST /api/actions/supervised` emits the governed supervised shape, but it does not yet perform approval flow, GitHub credential exchange, or provider execution.
+- The yellow lane is live supervised. `POST /api/actions/supervised` requests approval first, then approved execute attempts Auth0 GitHub connection token exchange and GitHub issue creation, returning `success` or a truthful `HOLD`.
 - The blue lane / OpenFGA surface is not shipped. The UI has a shell for it, but there is no blue server artifact and current route outputs keep `fga_checked: false`.
 
 ## Truth Boundaries
 
 - Green is a real Token Vault path, but it is not guaranteed success in every tenant/session. It can truthfully resolve as `HOLD` when refresh tokens, federated token-exchange grant setup, or connection material are missing.
-- Yellow and blue are intentionally honest partial surfaces.
+- Yellow is an approval-first supervised proof that can truthfully return `success` or `HOLD`. Blue remains an intentional shell.
 - If you need claim boundaries for demo or repo copy, read [docs/FEATURE_STATE.md](docs/FEATURE_STATE.md) first.
 
 ## Start Here
@@ -39,3 +39,4 @@ In this repo, Auth0 Universal Login establishes the application session and prot
 
 - `npm run typecheck`
 - `npm run build`
+

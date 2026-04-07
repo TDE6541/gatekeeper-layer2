@@ -136,7 +136,7 @@ export function ConnectedAccounts({
                   {row.tokenReady
                     ? "wired \u2014 Token Vault active"
                     : row.provider === "GitHub"
-                      ? "not wired \u2014 Wave 4"
+                      ? "approval-gated \u2014 approved execute tests token path"
                       : "awaiting identity"}
                 </dd>
               </div>
@@ -159,3 +159,4 @@ export function ConnectedAccounts({
     </section>
   );
 }
+

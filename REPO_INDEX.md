@@ -12,7 +12,7 @@ Use this file when you need the fastest truthful map of the local Layer 2 repo.
 | `proxy.ts` | Auth0 middleware hook that protects app routes and mounts SDK auth behavior. |
 | `lib/governance.ts` | Governance domains, tiers, action catalog, feed contract, HOLD labeling, and hard-stop receipt shape. |
 | `app/api/actions/full-auto/route.ts` | Green lane server route. Real Token Vault path for Google Calendar FreeBusy. |
-| `app/api/actions/supervised/route.ts` | Yellow lane server route. Staged supervised response only. |
+| `app/api/actions/supervised/route.ts` | Yellow lane server route. Approval-first supervised flow that can create a GitHub issue or return a truthful HOLD. |
 | `app/api/actions/hard-stop/route.ts` | Red lane server route. Real hard-stop proof and receipt emission. |
 | `lib/token-vault.ts` | Google connection name and Calendar FreeBusy provider call. |
 
@@ -34,7 +34,7 @@ Use this file when you need the fastest truthful map of the local Layer 2 repo.
 | `/auth/login` | Auth0 Universal Login entry. |
 | `/auth/logout` | Auth0 logout route. |
 | `POST /api/actions/full-auto` | Green lane route. Real provider-token path that can return `success` or a governed `HOLD`. |
-| `POST /api/actions/supervised` | Yellow lane route. Emits staged supervised evidence only. |
+| `POST /api/actions/supervised` | Yellow lane route. Requests approval first, then approved execute attempts GitHub issue creation and returns success or HOLD. |
 | `POST /api/actions/hard-stop` | Red lane route. Emits blocked evidence and a hard-stop receipt. |
 
 ## Key UI Panels
@@ -53,3 +53,4 @@ Use this file when you need the fastest truthful map of the local Layer 2 repo.
 - The blue lane is currently a UI shell only. There is no blue server route or emitted blue artifact in the local repo state.
 - `components/dashboard/red-lane-receipt.tsx` exists, but it is not wired into `app/dashboard/page.tsx`. The unified ledger panels are the current canonical dashboard surfaces.
 - For claim boundaries, use [docs/FEATURE_STATE.md](docs/FEATURE_STATE.md). For maintenance handoffs, use [docs/WHERE_TO_CHANGE_X.md](docs/WHERE_TO_CHANGE_X.md).
+
