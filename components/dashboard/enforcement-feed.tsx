@@ -1,4 +1,7 @@
-import type { GovernanceFeedEvent } from "@/lib/governance";
+import {
+  getGovernanceOutcomeLabel,
+  type GovernanceFeedEvent
+} from "@/lib/governance";
 
 function FeedBadge({ value }: { value: string }) {
   return (
@@ -8,17 +11,26 @@ function FeedBadge({ value }: { value: string }) {
   );
 }
 
-function outcomeTone(outcome: string): string {
+function outcomeTone(event: GovernanceFeedEvent): string {
+  const outcome = getGovernanceOutcomeLabel(event);
+
   if (outcome === "success") return "text-emerald-200";
+  if (outcome === "HOLD") return "text-amber-200";
   if (outcome === "error") return "text-rose-200";
   if (outcome === "blocked") return "text-rose-200";
   if (outcome === "stub_ready" || outcome === "allowed") return "text-amber-200";
   return "text-slate-300";
 }
 
-function outcomeBorder(outcome: string): string {
+function outcomeBorder(event: GovernanceFeedEvent): string {
+  const outcome = getGovernanceOutcomeLabel(event);
+
   if (outcome === "success") {
     return "border-emerald-400/20 bg-emerald-400/5";
+  }
+
+  if (outcome === "HOLD") {
+    return "border-amber-400/20 bg-amber-400/5";
   }
 
   if (outcome === "error" || outcome === "blocked") {
@@ -86,42 +98,46 @@ export function EnforcementFeed({
         </div>
       ) : (
         <div className="mt-5 space-y-3">
-          {orderedEvents.map((event) => (
-            <article
-              key={`${event.timestamp}-${event.action}`}
-              className={`rounded-xl border p-4 ${outcomeBorder(event.outcome)}`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-500">
-                  {event.timestamp}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <FeedBadge value={`lane:${laneLabel(event.action)}`} />
-                  <FeedBadge value={event.tier} />
-                  <FeedBadge value={event.outcome} />
+          {orderedEvents.map((event) => {
+            const displayOutcome = getGovernanceOutcomeLabel(event);
+
+            return (
+              <article
+                key={`${event.timestamp}-${event.action}`}
+                className={`rounded-xl border p-4 ${outcomeBorder(event)}`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs uppercase tracking-[0.22em] text-slate-500">
+                    {event.timestamp}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <FeedBadge value={`lane:${laneLabel(event.action)}`} />
+                    <FeedBadge value={event.tier} />
+                    <FeedBadge value={displayOutcome} />
+                  </div>
                 </div>
-              </div>
-              <p className="mt-3 text-sm text-slate-100">{event.action}</p>
-              <dl className="mt-4 grid gap-2 text-xs text-slate-400 sm:grid-cols-2 xl:grid-cols-3">
-                <FeedField label="proof_domain" value={event.domain} />
-                <FeedField label="proof_tier" value={event.tier} tone={outcomeTone(event.outcome)} />
-                <FeedField label="proof_outcome" value={event.outcome} tone={outcomeTone(event.outcome)} />
-                <FeedField
-                  label="proof_credential_requested"
-                  value={String(event.credential_requested)}
-                />
-                <FeedField
-                  label="proof_approval_requested"
-                  value={String(event.approval_requested)}
-                />
-                <FeedField
-                  label="proof_fga_checked"
-                  value={String(event.fga_checked)}
-                />
-                <FeedField label="proof_reason" value={event.reason} tone={outcomeTone(event.outcome)} />
-              </dl>
-            </article>
-          ))}
+                <p className="mt-3 text-sm text-slate-100">{event.action}</p>
+                <dl className="mt-4 grid gap-2 text-xs text-slate-400 sm:grid-cols-2 xl:grid-cols-3">
+                  <FeedField label="proof_domain" value={event.domain} />
+                  <FeedField label="proof_tier" value={event.tier} tone={outcomeTone(event)} />
+                  <FeedField label="proof_outcome" value={displayOutcome} tone={outcomeTone(event)} />
+                  <FeedField
+                    label="proof_credential_requested"
+                    value={String(event.credential_requested)}
+                  />
+                  <FeedField
+                    label="proof_approval_requested"
+                    value={String(event.approval_requested)}
+                  />
+                  <FeedField
+                    label="proof_fga_checked"
+                    value={String(event.fga_checked)}
+                  />
+                  <FeedField label="proof_reason" value={event.reason} tone={outcomeTone(event)} />
+                </dl>
+              </article>
+            );
+          })}
         </div>
       )}
     </section>

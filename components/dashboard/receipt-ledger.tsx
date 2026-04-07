@@ -1,3 +1,4 @@
+import { getGovernanceOutcomeLabel } from "@/lib/governance";
 import type {
   GovernanceDecisionTrace,
   GovernanceFeedEvent,
@@ -38,6 +39,14 @@ function statusTone(captured: boolean) {
   return captured
     ? "border-slate-700 bg-slate-900 text-slate-200"
     : "border-slate-700 bg-slate-950 text-slate-400";
+}
+
+function emptyReceiptMessage(lane: LedgerLane) {
+  if (lane === "yellow" || lane === "blue") {
+    return "Awaiting execution — governance pre-check passed";
+  }
+
+  return "No receipt artifact emitted yet.";
 }
 
 export function ReceiptLedger({
@@ -112,11 +121,13 @@ export function ReceiptLedger({
                 <div className="mt-4 rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-300">
                   <p>domain {entry.event.domain}</p>
                   <p>tier {entry.event.tier}</p>
-                  <p>outcome {entry.event.outcome}</p>
+                  <p>outcome {getGovernanceOutcomeLabel(entry.event)}</p>
+                  <p>approval_requested {String(entry.event.approval_requested)}</p>
+                  <p>credential_requested {String(entry.event.credential_requested)}</p>
                 </div>
               ) : (
                 <div className="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-500">
-                  No receipt artifact emitted yet.
+                  {emptyReceiptMessage(entry.lane)}
                 </div>
               )}
             </button>

@@ -23,6 +23,14 @@ type ActionRouteError = {
   error?: string;
 };
 
+type YellowRoutePhase = "request_approval" | "execute_approved";
+
+type ActionRouteBody = {
+  phase?: YellowRoutePhase;
+};
+
+const YELLOW_ACTION_ID = "github_issue_create";
+
 function tierButtonClass(tier: DemoActionCard["tier"]) {
   if (tier === "FULL_AUTO") {
     return "border-emerald-400/30 bg-emerald-500/10 text-emerald-200 hover:border-emerald-300/60 hover:bg-emerald-500/20";
@@ -40,7 +48,7 @@ function laneFromAction(actionId: string): LedgerLane | null {
     return "green";
   }
 
-  if (actionId === "github_issue_create") {
+  if (actionId === YELLOW_ACTION_ID) {
     return "yellow";
   }
 
@@ -64,7 +72,7 @@ function sortNewestFirst(events: GovernanceFeedEvent[]) {
 
 function createInitialLedger(actions: DemoActionCard[]): Record<LedgerLane, ReceiptLedgerEntry> {
   const green = actions.find((action) => action.id === "google_calendar_read");
-  const yellow = actions.find((action) => action.id === "github_issue_create");
+  const yellow = actions.find((action) => action.id === YELLOW_ACTION_ID);
   const red = actions.find((action) => action.id === "pricing_rule_change");
 
   return {
@@ -83,7 +91,7 @@ function createInitialLedger(actions: DemoActionCard[]): Record<LedgerLane, Rece
       lane: "yellow",
       title: "Yellow Receipt",
       subtitle: "Approval-gated receipt",
-      expectedAction: yellow?.id ?? "github_issue_create",
+      expectedAction: yellow?.id ?? YELLOW_ACTION_ID,
       route: yellow?.route ?? "/api/actions/supervised",
       provider: yellow?.provider ?? "github",
       event: null,
@@ -124,6 +132,19 @@ function isGovernanceActionResult(payload: unknown): payload is GovernanceAction
   );
 }
 
+function pendingKey(actionId: string, phase?: YellowRoutePhase) {
+  return phase ? `${actionId}:${phase}` : actionId;
+}
+
+function isYellowApprovalReadyEvent(event: GovernanceFeedEvent) {
+  return (
+    event.action === YELLOW_ACTION_ID &&
+    event.approval_requested &&
+    !event.credential_requested &&
+    event.outcome === "allowed"
+  );
+}
+
 export function ActionSurface({ actions }: ActionSurfaceProps) {
   const [events, setEvents] = useState<GovernanceFeedEvent[]>([]);
   const [ledger, setLedger] = useState<Record<LedgerLane, ReceiptLedgerEntry>>(() =>
@@ -131,10 +152,12 @@ export function ActionSurface({ actions }: ActionSurfaceProps) {
   );
   const [activeLane, setActiveLane] = useState<LedgerLane>("red");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [yellowApprovalReady, setYellowApprovalReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function runAction(action: DemoActionCard) {
-    setPendingAction(action.id);
+  async function runAction(action: DemoActionCard, body: ActionRouteBody = {}) {
+    const actionKey = pendingKey(action.id, body.phase);
+    setPendingAction(actionKey);
     setError(null);
 
     try {
@@ -142,7 +165,8 @@ export function ActionSurface({ actions }: ActionSurfaceProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
-        }
+        },
+        body: JSON.stringify(body)
       });
 
       const payload = (await response.json()) as GovernanceActionResult | ActionRouteError;
@@ -162,6 +186,18 @@ export function ActionSurface({ actions }: ActionSurfaceProps) {
             }
           }));
           setActiveLane(lane);
+        }
+
+        if (payload.event.action === YELLOW_ACTION_ID) {
+          if (isYellowApprovalReadyEvent(payload.event)) {
+            setYellowApprovalReady(true);
+          } else if (
+            body.phase === "execute_approved" ||
+            payload.event.credential_requested ||
+            !payload.event.approval_requested
+          ) {
+            setYellowApprovalReady(false);
+          }
         }
       }
 
@@ -213,35 +249,71 @@ export function ActionSurface({ actions }: ActionSurfaceProps) {
           </div>
 
           <div className="mt-5 grid gap-3">
-            {actions.map((action) => (
-              <article
-                key={action.id}
-                className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-slate-500">
-                      {action.title}
-                    </p>
-                    <p className="mt-2 text-sm text-slate-100">{action.id}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      provider {action.provider} / domain {action.domain}
-                    </p>
-                    <p className="mt-3 text-sm leading-6 text-slate-300">
-                      {action.summary}
-                    </p>
+            {actions.map((action) => {
+              const isYellowAction = action.id === YELLOW_ACTION_ID;
+              const requestKey = pendingKey(action.id, "request_approval");
+              const executeKey = pendingKey(action.id, "execute_approved");
+
+              return (
+                <article
+                  key={action.id}
+                  className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">
+                        {action.title}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-100">{action.id}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        provider {action.provider} / domain {action.domain}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-slate-300">
+                        {action.summary}
+                      </p>
+                    </div>
+
+                    {isYellowAction ? (
+                      <div className="flex min-w-[13rem] flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void runAction(action, { phase: "request_approval" })}
+                          disabled={pendingAction !== null}
+                          className={`rounded-lg border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tierButtonClass(action.tier)}`}
+                        >
+                          {pendingAction === requestKey ? "Requesting..." : "Request approval"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void runAction(action, { phase: "execute_approved" })}
+                          disabled={pendingAction !== null || !yellowApprovalReady}
+                          className={`rounded-lg border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tierButtonClass(action.tier)}`}
+                        >
+                          {pendingAction === executeKey ? "Executing..." : "Approved execute"}
+                        </button>
+                        <p className="text-xs text-slate-400">
+                          Approval must be captured first. GitHub credential request stays false until approved execute.
+                        </p>
+                        {yellowApprovalReady ? (
+                          <p className="text-xs text-amber-200">
+                            Approval is captured for one execute pass.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void runAction(action)}
+                        disabled={pendingAction !== null}
+                        className={`rounded-lg border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tierButtonClass(action.tier)}`}
+                      >
+                        {pendingAction === action.id ? "Running..." : "Run route"}
+                      </button>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void runAction(action)}
-                    disabled={pendingAction !== null}
-                    className={`rounded-lg border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tierButtonClass(action.tier)}`}
-                  >
-                    {pendingAction === action.id ? "Running..." : "Run route"}
-                  </button>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
 
           {error ? (
